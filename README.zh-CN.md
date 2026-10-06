@@ -29,8 +29,6 @@
 - **在线估计 + 数据驱动预测**：`filterpy` EKF（OCV 查表 + R0/R1C1 等效电路，
   3 mV 噪声下 SOC RMSE ≈ 2.2%）与小型 LSTM（前 20 圈 SOH → 后 30 圈，曲线
   MAE ≈ 1.0% SOH、未见过高温电池 RUL 误差 ≈ 3.2 圈）。
-- **BMS 部署通路**：SOC/SOH 网络导出 **INT8 量化 TFLite** 模型 + C 头文件测试数据，
-  可直接对接嵌入式目标。
 - **交互式仪表盘**：Streamlit 4 页签——虚拟实验与耦合场、EKF 与 EIS、
   LSTM 寿命预测、全链路总览。
 
@@ -47,7 +45,7 @@
      ┌─────────┼────────────────┬──────────────────────┐
      ▼         ▼                ▼                      ▼
  SOC_Train.py  kalman_soc.py  eis_simulation.py      rul_lstm.py
- LSTM+INT8     EKF 在线 SOC    小信号 EIS 扫频         LSTM 寿命预测
+ LSTM          EKF 在线 SOC    小信号 EIS 扫频         LSTM 寿命预测
                (RMSE≈2.2%)     Nyquist + ZARC 拟合    (MAE≈1%, ±3 圈)
      │              │            │                      │
      └──────────────┴────────────┴──────────────────────┘
@@ -60,15 +58,15 @@
 ```
 ├── si_halfcell_dataset.py   # 一键生成 DFN 全耦合虚拟数据集
 ├── eis_simulation.py        # 时域小信号 EIS → 标准 Nyquist + ZARC 拟合
-├── SOC_Train.py             # LSTM SOC 训练（含 INT8 TFLite 导出、C 头文件）
-├── SOH_Train.py             # CNN SOH 训练（含 INT8 TFLite 导出、C 头文件）
+├── SOC_Train.py             # LSTM SOC 训练
+├── SOH_Train.py             # CNN SOH 训练
 ├── kalman_soc.py            # Step 2：EKF 在线 SOC 估算（含演示图）
 ├── rul_lstm.py              # Step 3：LSTM 容量衰减 / RUL 预测
 ├── app.py                   # Step 4：Streamlit 数字孪生仪表盘
 ├── Gemini_SOC_Train.py      # 旧版 SOC 变体（基于原始 UNIBO 数据集）
 ├── data_processing/         # 数据加载与归一化（UNIBO 兼容）
 ├── data/                    # 数据集（按需生成，见「快速开始」）
-├── results/                 # 演示图、指标 JSON、EIS 数据表、TFLite 模型
+├── results/                 # 演示图、指标 JSON、EIS 分析数据表
 ├── Picture/                 # 网络结构图
 └── requirements.txt
 ```
@@ -106,11 +104,11 @@ python kalman_soc.py     # EKF 演示 → results/digital_twin/ekf_soc_demo.png
 python rul_lstm.py       # LSTM 训练 + 指标 → results/digital_twin/
 ```
 
-### 3. 可选：训练 SOC / SOH 网络并导出 INT8 部署模型
+### 3. 可选：训练 SOC / SOH 网络
 
 ```bash
-python SOC_Train.py      # → …_lstm_soc_percentage.keras + BMS_SOC_INT8.tflite
-python SOH_Train.py      # → …_cnn_soh_percentage.keras + BMS_SOH_INT8.tflite
+python SOC_Train.py      # → …_lstm_soc_percentage.keras
+python SOH_Train.py      # → …_cnn_soh_percentage.keras
 ```
 
 ### 4. 可选：EIS 阻抗仿真（4 温度 × 5 SOC × 13 频点，约 8 分钟）

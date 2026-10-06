@@ -22,7 +22,6 @@ from keras.optimizers import SGD, Adam
 #from keras.utils import np_utils
 from keras.layers import LSTM, Embedding, RepeatVector, TimeDistributed, Masking
 from keras.callbacks import EarlyStopping, ModelCheckpoint, LambdaCallback
-from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 data_path = "./"
 sys.path.append(data_path)
@@ -239,86 +238,3 @@ fig.update_layout(title='Results on testing',
                   width=1400,
                   height=600)
 fig.show()
-
-# Convert to INT8 tflite model.
-def representative_dataset():
-    # 量化校准数据须为 float32（MinMaxScaler 数据管线输出 float64，需显式转换）
-    for input_value in tf.data.Dataset.from_tensor_slices(train_x.astype(np.float32)).batch(1).take(1000):
-        yield [input_value]
-
-# 本机为 TF 2.16 + 独立 Keras 3（keras 3.15）：from_keras_model 转换该 Keras 3 模型
-# 会在 MLIR 阶段发生 native 崩溃（ReadVariableOp 缺失 'value' 属性），
-# 改用"冻结变量为常量的具体函数"（concrete function）方式转换，可稳定通过。
-@tf.function(input_signature=[tf.TensorSpec([None, train_x.shape[1], train_x.shape[2]], tf.float32)])
-def soh_serving(x):
-    return loaded_model(x)
-
-soh_concrete = soh_serving.get_concrete_function()
-soh_frozen = convert_variables_to_constants_v2(soh_concrete)
-
-converter = tf.lite.TFLiteConverter.from_concrete_functions([soh_frozen])
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-converter.representative_dataset = representative_dataset
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-converter.inference_input_type = tf.int8  # or tf.uint8
-converter.inference_output_type = tf.int8  # or tf.uint8
-tflite_quant_model = converter.convert()
-
-# Save the model.
-with open('results/trained_model/BMS_SOH_INT8.tflite', 'wb') as f:
-  f.write(tflite_quant_model)
-
-def export_numpy_to_c_header(x_array, y_array, filename="test_data.h"):
-    """
-    Convert the NumPy array and write it to the C Header file.
-    """
-    print(f"Data is being exported to {filename} ...")
-    
-    with open(filename, 'w') as f:
-        f.write("#ifndef TEST_DATA_H\n")
-        f.write("#define TEST_DATA_H\n\n")
-
-        # Write the Normalize information of the input data for easy reference during C language development.
-        f.write(f"// Normalize scale factor(voltage, current, temperature)\n")
-        scale_max_str = f"{charge_x_scaler[0].data_max_[0]}, {charge_x_scaler[1].data_max_[0]}, {charge_x_scaler[2].data_max_[0]}"
-        scale_min_str = f"{charge_x_scaler[0].data_min_[0]}, {charge_x_scaler[1].data_min_[0]}, {charge_x_scaler[2].data_min_[0]}"
-        f.write(f"const float normalize_scale_max[] = {{{scale_max_str}}};\n")
-        f.write(f"const float normalize_scale_min[] = {{{scale_min_str}}};\n")
-
-        def write_array_to_c(arr, array_name):
-            slice_start = 0  # Adjust the starting position of the slice according to actual needs.
-            slice_size = 64  # Adjust the slice size according to actual needs.
-            slice_arr = arr[slice_start: slice_start + slice_size, ...]
-
-            flat_arr = slice_arr.flatten()
-            length = len(flat_arr)
-
-            # Write the array dimensions for easy reference during C language development
-            f.write(f"// Original array shape: {slice_arr.shape}\n")
-            f.write(f"const int {array_name}_dim[] = {{{', '.join(map(str, slice_arr.shape))}}};\n")
-            f.write(f"const int {array_name}_length = {length};\n\n")
-            
-            # Declare the C array (using float as an example)
-            f.write(f"const float {array_name}[{length}] = {{\n")
-            
-            # Write the values ​​in batches to avoid compiler errors caused by single lines being too long (12 values ​​per line).
-            for i in range(0, length, 12):
-                chunk = flat_arr[i:i+12]
-                chunk_str = ", ".join([f"{val:.6f}" for val in chunk])
-                if i + 12 < length:
-                    f.write(f"    {chunk_str},\n")
-                else:
-                    f.write(f"    {chunk_str}\n")
-            f.write("};\n\n")
-
-        # Write the X and Y data
-        write_array_to_c(x_array, "test_x")
-        write_array_to_c(y_array, "test_y")
-
-        f.write("#endif // TEST_DATA_H\n")
-    
-    print("Export completed!")
-
-# Export test_x and test_y data to C header file for later use in C language development.
-export_filepath = data_path + 'results/trained_model/SOH_test_data.h'
-export_numpy_to_c_header(test_raw_x, test_y, filename=export_filepath)

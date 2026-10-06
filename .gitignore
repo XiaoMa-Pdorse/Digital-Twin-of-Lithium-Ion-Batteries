@@ -33,10 +33,10 @@ data/_debug_si_halfcell/
 data/unibo-powertools-dataset/
 
 # ============================================================
-# 训练过程产物（由 SOC_Train.py / SOH_Train.py 生成；
-# INT8 tflite 部署模型与测试数据头文件保留）
+# 训练过程产物（由 SOC_Train.py / SOH_Train.py 本地生成）
 # ============================================================
 results/trained_model/*.keras
+results/trained_model/*.h
 
 # ============================================================
 # 系统文件

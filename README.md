@@ -32,8 +32,7 @@ remaining-useful-life prediction, and an interactive **Streamlit** dashboard.
   R0/R1C1 model (SOC RMSE ≈ 2.2 % under 3 mV sensor noise), and a compact LSTM
   that predicts the next 30 cycles of SOH from the first 20 (curve MAE ≈ 1.0 % SOH,
   RUL error ≈ 3.2 cycles on unseen high-temperature cells).
-- **BMS deployment path.** SOC/SOH networks are exported as **INT8 quantized TFLite**
-  models plus C header test data — ready for embedded targets.
+  language statistics honest).
 - **Interactive dashboard.** Streamlit app with 4 tabs: virtual experiment data &
   coupled-field diagnostics, EKF + EIS analysis, LSTM RUL, and a full-pipeline overview.
 
@@ -50,7 +49,7 @@ remaining-useful-life prediction, and an interactive **Streamlit** dashboard.
      ┌─────────┼────────────────┬──────────────────────┐
      ▼         ▼                ▼                      ▼
  SOC_Train.py  kalman_soc.py  eis_simulation.py      rul_lstm.py
- LSTM + INT8   EKF online SOC  small-signal EIS      LSTM RUL
+ LSTM          EKF online SOC  small-signal EIS      LSTM RUL
                (RMSE ≈ 2.2 %)  → Nyquist + ZARC      (MAE ≈ 1 %, ±3 cyc)
      │              │            │                      │
      └──────────────┴────────────┴──────────────────────┘
@@ -63,15 +62,15 @@ remaining-useful-life prediction, and an interactive **Streamlit** dashboard.
 ```
 ├── si_halfcell_dataset.py   # One-click generator of the DFN coupled virtual dataset
 ├── eis_simulation.py        # Time-domain small-signal EIS → standard Nyquist + ZARC fit
-├── SOC_Train.py             # LSTM SOC training (INT8 TFLite export, C header)
-├── SOH_Train.py             # CNN SOH training  (INT8 TFLite export, C header)
+├── SOC_Train.py             # LSTM SOC training
+├── SOH_Train.py             # CNN SOH training
 ├── kalman_soc.py            # Step 2: EKF online SOC estimation (+ demo figure)
 ├── rul_lstm.py              # Step 3: LSTM capacity-fade / RUL prediction
 ├── app.py                   # Step 4: Streamlit digital-twin dashboard (streamlit run app.py)
 ├── Gemini_SOC_Train.py      # Legacy SOC variant (original UNIBO dataset)
 ├── data_processing/         # Dataset loaders / normalization (UNIBO-compatible)
 ├── data/                    # Datasets (generated on demand, see Quick Start)
-├── results/                 # Demo figures, metrics, EIS tables, TFLite models
+├── results/                 # Demo figures, metrics and EIS analysis tables
 ├── Picture/                 # Network architecture figures
 └── requirements.txt
 ```
@@ -110,11 +109,11 @@ python kalman_soc.py     # EKF demo → results/digital_twin/ekf_soc_demo.png
 python rul_lstm.py       # LSTM training + metrics → results/digital_twin/
 ```
 
-### 3. Optional: SOC / SOH networks + INT8 deployment models
+### 3. Optional: train the SOC / SOH networks
 
 ```bash
-python SOC_Train.py      # → results/trained_model/…_lstm_soc_percentage.keras + BMS_SOC_INT8.tflite
-python SOH_Train.py      # → results/trained_model/…_cnn_soh_percentage.keras + BMS_SOH_INT8.tflite
+python SOC_Train.py      # → results/trained_model/…_lstm_soc_percentage.keras
+python SOH_Train.py      # → results/trained_model/…_cnn_soh_percentage.keras
 ```
 
 ### 4. Optional: EIS impedance analysis (~8 min, 4 T × 5 SOC × 13 frequencies)
