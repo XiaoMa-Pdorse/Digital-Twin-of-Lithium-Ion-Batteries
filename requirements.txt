@@ -1,0 +1,13 @@
+# Battery digital twin (DFN virtual experiments + EKF/EIS/RUL + Streamlit)
+# Python 3.12, verified on Windows 11 (2026-10)
+pybamm==26.4.1
+tensorflow==2.16.2
+keras==3.15.0
+numpy==1.26.4
+pandas==3.0.2
+scipy==1.17.1
+scikit-learn==1.9.0
+filterpy==1.4.5
+streamlit==1.63.0
+plotly==7.0.0
+matplotlib==3.10.9

@@ -1,0 +1,108 @@
+{
+  "cells": [
+    {
+      "test_name": "021-SI-3.0-3550-S",
+      "temperature_c": 35.5,
+      "curve_mae": 0.004354043863713741,
+      "curve_rmse": 0.005130899138748646,
+      "final_err": 0.009424090385437012,
+      "true_eol_cycle": 41.02287581050173,
+      "pred_eol_cycle": 42.452148147453336,
+      "rul_err_cycle": 1.4292723369516054
+    },
+    {
+      "test_name": "022-SI-3.0-3600-S",
+      "temperature_c": 36.0,
+      "curve_mae": 0.005277764983475208,
+      "curve_rmse": 0.006331482902169228,
+      "final_err": 0.011287569999694824,
+      "true_eol_cycle": 40.53362596196428,
+      "pred_eol_cycle": 42.408620202690024,
+      "rul_err_cycle": 1.8749942407257407
+    },
+    {
+      "test_name": "023-SI-3.0-3650-S",
+      "temperature_c": 36.5,
+      "curve_mae": 0.006112450268119574,
+      "curve_rmse": 0.007320207078009844,
+      "final_err": 0.012905657291412354,
+      "true_eol_cycle": 40.10856218740905,
+      "pred_eol_cycle": 42.31069332042032,
+      "rul_err_cycle": 2.202131133011271
+    },
+    {
+      "test_name": "024-SI-3.0-3700-S",
+      "temperature_c": 37.0,
+      "curve_mae": 0.006970840506255627,
+      "curve_rmse": 0.008277124725282192,
+      "final_err": 0.014366447925567627,
+      "true_eol_cycle": 39.71935959215229,
+      "pred_eol_cycle": 42.21334508360715,
+      "rul_err_cycle": 2.4939854914548647
+    },
+    {
+      "test_name": "025-SI-3.0-3750-S",
+      "temperature_c": 37.5,
+      "curve_mae": 0.0077439844608306885,
+      "curve_rmse": 0.009209099225699902,
+      "final_err": 0.015889763832092285,
+      "true_eol_cycle": 39.39314424043242,
+      "pred_eol_cycle": 42.11354530895586,
+      "rul_err_cycle": 2.7204010685234365
+    },
+    {
+      "test_name": "026-SI-3.0-3800-S",
+      "temperature_c": 38.0,
+      "curve_mae": 0.008676954545080662,
+      "curve_rmse": 0.01025064941495657,
+      "final_err": 0.017472267150878906,
+      "true_eol_cycle": 38.9848898321582,
+      "pred_eol_cycle": 41.98711746686859,
+      "rul_err_cycle": 3.002227634710387
+    },
+    {
+      "test_name": "027-SI-3.0-3850-S",
+      "temperature_c": 38.5,
+      "curve_mae": 0.009639429859817028,
+      "curve_rmse": 0.011319966986775398,
+      "final_err": 0.019162476062774658,
+      "true_eol_cycle": 38.58873662155284,
+      "pred_eol_cycle": 41.8663053328284,
+      "rul_err_cycle": 3.2775687112755563
+    },
+    {
+      "test_name": "028-SI-3.0-3900-S",
+      "temperature_c": 39.0,
+      "curve_mae": 0.010901093482971191,
+      "curve_rmse": 0.01266991626471281,
+      "final_err": 0.02134472131729126,
+      "true_eol_cycle": 38.20058497119612,
+      "pred_eol_cycle": 41.78568067915431,
+      "rul_err_cycle": 3.585095707958189
+    },
+    {
+      "test_name": "029-SI-3.0-3950-S",
+      "temperature_c": 39.5,
+      "curve_mae": 0.012160220183432102,
+      "curve_rmse": 0.01393645629286766,
+      "final_err": 0.023027002811431885,
+      "true_eol_cycle": 37.80772554267358,
+      "pred_eol_cycle": 41.68737648757589,
+      "rul_err_cycle": 3.879650944902309
+    },
+    {
+      "test_name": "030-SI-3.0-4000-S",
+      "temperature_c": 40.0,
+      "curve_mae": 0.013491922989487648,
+      "curve_rmse": 0.01527702622115612,
+      "final_err": 0.024851322174072266,
+      "true_eol_cycle": 37.42532738538406,
+      "pred_eol_cycle": 41.628494457530216,
+      "rul_err_cycle": 4.203167072146158
+    }
+  ],
+  "curve_mae_mean": 0.008532870514318346,
+  "curve_rmse_mean": 0.009972282825037837,
+  "final_err_mean": 0.01697313189506531,
+  "rul_err_abs_mean": 2.866849434165952
+}
