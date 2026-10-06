@@ -169,6 +169,6 @@ Tabs: **① Virtual data & coupled fields · ② EKF online SOC + EIS · ③ LST
 ## Acknowledgements
 
 The repository builds on the open-source PyBaMM ecosystem and the battery-state-estimation
-codebase by Kei Long Wong et al.; the DFN coupled-aging workflow, virtual dataset,
+codebase by Kei Long Wong ,chchen59 et al.; the DFN coupled-aging workflow, virtual dataset,
 EIS simulation and dashboard were extended on top of it. For research and educational
 use — the parameter sets and virtual data are not claimed to represent any real cell.
