@@ -32,7 +32,6 @@ remaining-useful-life prediction, and an interactive **Streamlit** dashboard.
   R0/R1C1 model (SOC RMSE ≈ 2.2 % under 3 mV sensor noise), and a compact LSTM
   that predicts the next 30 cycles of SOH from the first 20 (curve MAE ≈ 1.0 % SOH,
   RUL error ≈ 3.2 cycles on unseen high-temperature cells).
-  language statistics honest).
 - **Interactive dashboard.** Streamlit app with 4 tabs: virtual experiment data &
   coupled-field diagnostics, EKF + EIS analysis, LSTM RUL, and a full-pipeline overview.
 
@@ -62,16 +61,17 @@ remaining-useful-life prediction, and an interactive **Streamlit** dashboard.
 ```
 ├── si_halfcell_dataset.py   # One-click generator of the DFN coupled virtual dataset
 ├── eis_simulation.py        # Time-domain small-signal EIS → standard Nyquist + ZARC fit
-├── SOC_Train.py             # LSTM SOC training
-├── SOH_Train.py             # CNN SOH training
+├── SOC_Train.py             # LSTM SOC training (reads the unified dataset)
+├── SOH_Train.py             # CNN SOH training (reads the unified dataset)
 ├── kalman_soc.py            # Step 2: EKF online SOC estimation (+ demo figure)
 ├── rul_lstm.py              # Step 3: LSTM capacity-fade / RUL prediction
 ├── app.py                   # Step 4: Streamlit digital-twin dashboard (streamlit run app.py)
-├── Gemini_SOC_Train.py      # Legacy SOC variant (original UNIBO dataset)
 ├── data_processing/         # Dataset loaders / normalization (UNIBO-compatible)
+│   ├── unibo_powertools_data.py   # Cycle/capacity tables → SOC & SOH construction
+│   └── model_data_handler.py      # Scaling & model-input formatting
 ├── data/                    # Datasets (generated on demand, see Quick Start)
 ├── results/                 # Demo figures, metrics and EIS analysis tables
-├── Picture/                 # Network architecture figures
+├── Picture/                 # Model architecture & test-result figures
 └── requirements.txt
 ```
 
@@ -168,6 +168,6 @@ Tabs: **① Virtual data & coupled fields · ② EKF online SOC + EIS · ③ LST
 ## Acknowledgements
 
 The repository builds on the open-source PyBaMM ecosystem and the battery-state-estimation
-codebase by Kei Long Wong ,chchen59 et al.; the DFN coupled-aging workflow, virtual dataset,
+codebase by Kei Long Wong, chchen59, et al.; the DFN coupled-aging workflow, virtual dataset,
 EIS simulation and dashboard were extended on top of it. For research and educational
 use — the parameter sets and virtual data are not claimed to represent any real cell.

@@ -58,16 +58,17 @@
 ```
 ├── si_halfcell_dataset.py   # 一键生成 DFN 全耦合虚拟数据集
 ├── eis_simulation.py        # 时域小信号 EIS → 标准 Nyquist + ZARC 拟合
-├── SOC_Train.py             # LSTM SOC 训练
-├── SOH_Train.py             # CNN SOH 训练
+├── SOC_Train.py             # LSTM SOC 训练（读取统一数据集）
+├── SOH_Train.py             # CNN SOH 训练（读取统一数据集）
 ├── kalman_soc.py            # Step 2：EKF 在线 SOC 估算（含演示图）
 ├── rul_lstm.py              # Step 3：LSTM 容量衰减 / RUL 预测
 ├── app.py                   # Step 4：Streamlit 数字孪生仪表盘
-├── Gemini_SOC_Train.py      # 旧版 SOC 变体（基于原始 UNIBO 数据集）
-├── data_processing/         # 数据加载与归一化（UNIBO 兼容）
+├── data_processing/         # 数据加载与归一化（UNIBO 兼容格式）
+│   ├── unibo_powertools_data.py   # 曲线/容量表加载与 SOC、SOH 构造
+│   └── model_data_handler.py      # 归一化与模型输入格式化
 ├── data/                    # 数据集（按需生成，见「快速开始」）
 ├── results/                 # 演示图、指标 JSON、EIS 分析数据表
-├── Picture/                 # 网络结构图
+├── Picture/                 # 模型结构与测试结果图
 └── requirements.txt
 ```
 
