@@ -1,83 +1,51 @@
 # -*- coding: utf-8 -*-
-"""Si（非晶硅）半电池训练数据集生成脚本：一份统一数据集同时服务 SOC 与 SOH 训练。
+"""Step 1：DFN 全耦合虚拟数据集生成 —— 硅基负极数字孪生原型（第 1/4 步）。
 
-统一数据集 ``data/si-c-half-cell/``
------------------------------------
-- 电化学模型升级为 **DFN（Doyle-Fuller-Newman，真 P2D）**：同时求解固相颗粒
-  扩散 PDE、液相（电解液）扩散 PDE 与 Butler-Volmer 动力学，替代原 SPMe 的
-  电解液浓度均匀假设（高倍率/厚电极下失效）；
-- **电化学-热耦合**：``thermal='lumped'`` 集总热模型（含不可逆欧姆/反应热与
-  可逆熵热），电池温度成为求解变量——导出温度列为真实电池温度（随充放电
-  动态变化），而非原脚本的恒定环境温度；
-- **电化学-力耦合 + 裂纹老化**：``particle mechanics='swelling and cracking'``
-  颗粒膨胀-开裂力学 + ``SEI on cracks='true'`` 裂纹处 SEI 持续生长 +
-  ``loss of active material='stress-driven'`` 应力驱动活性材料损失——硅负极
-  体积膨胀导致的「应力→裂纹→裂纹处 SEI→容量衰减」链条完整落地；
-- SEI 老化保留（溶剂扩散限制型 SEI + 分布膜阻 + 孔隙率变化，参数取自
-  OKane2022_graphite_SiOx_halfcell 默认值）：充电容量随循环平滑衰减，
-  容量表 SOH = 本圈充电容量 / 该电池最大充电容量 为真实老化曲线；
-- **温度网格：25.0 ~ 40.0 ℃，步长 0.5 ℃，共 31 只电池**（编号 000 ~ 030）：
-  温度通过 Arrhenius 项同时影响 SEI 生长速率与动力学，形成「温度-衰减快慢」
-  梯度，供 SOH/RUL 模型学习并做高温外推验证；
-- 每只电池 3 圈 C/20 化成（仅用于生成 OCV 先验表，不导出）+ 50 圈 C/2
-  （导出），每条半循环曲线按容量分数均匀重采样约 512 点；
-- SOC 与 SOH 训练共用同一份 CSV：
-  * SOC_Train.py 取 line 40（放电段）：容量分数标签由该圈充电容量归一化，
-    老化不破坏标签自洽性；SOH 列作为输入特征携带真实衰减信息；
-  * SOH_Train.py 取 line 37（充电段）：容量表 SOH 列为真实老化曲线；
-  * SOH 侧 CNN 含 4 层 kernel=32 的 Conv1D 与 4 次 MaxPooling1D，要求
-    输入长度 >= 481，512 为满足条件的 2 的幂；
-- 只导出 C/2 阶段的 50 圈：前 3 圈化成的容量差异由倍率（快充极化）而非
-  老化引起，若混入会使 SOH 出现断层，语义失真；
-- 附带产物：
-  * ``si_c_half_cell_soc_train.csv``：000 号电池第 3 圈（最后一圈低倍率
-    准 OCV 循环）放电曲线的 50 点重采样 (SOC [%], Voltage [V],
-    Stoichiometry x)，作为 kalman_soc.py 的 OCV-SOC 先验表；
-  * ``coupled_diagnostics.csv``：逐圈逐段（放电/充电）耦合物理场诊断表——
-    最高温度、平均热源、颗粒表面切向应力、裂纹长度/扩展速率、活性材料
-    残留分数、SEI 厚度——用于机制分析、报告与 Streamlit 展示；
-  * ``capacity_fade_cell_000.png``：000 号电池循环-容量曲线 PNG，
-    可视化 SEI+裂纹老化带来的容量衰减。
+功能
+----
+1. 用 PyBaMM 的 DFN（真 P2D）半电池模型（固相/液相扩散 PDE + Butler-Volmer
+   动力学），批量仿真 31 只电池（25.0~40.0 ℃，步长 0.5 ℃）× 53 圈（3 圈
+   C/20 化成 + 50 圈 C/2），每条半循环按容量分数重采样约 512 点，导出 UNIBO
+   同构 CSV，供 SOC_Train.py / SOH_Train.py 共用；
+2. 耦合老化与热：SEI（溶剂扩散限制型 + 分布膜阻 + 孔隙率变化）+ 颗粒膨胀开裂
+   （swelling and cracking）+ 裂纹处 SEI 生长 + 应力驱动 LAM + 集总热模型，
+   温度导出为真实电池温度（求解变量）；50 圈容量衰减随温度从 ~20%（25 ℃）
+   增至 ~26%（40 ℃）；
+3. 附带产物：逐圈逐段耦合物理场诊断表（coupled_diagnostics.csv：温度/热源/
+   颗粒表面应力/裂纹长度与速率/LAM/SEI 厚度）、OCV-SOC 先验表
+   （si_c_half_cell_soc_train.csv，供 kalman_soc.py）与容量衰减图 PNG。
 
-采样与补零说明（SOC 时序滑窗）
-------------------------------
-- 常规圈点数在 511/512 间随圈号奇偶微变（避免所有圈严格等长时
-  np.array(list, dtype=object) 退化为规整三维数组、破坏处理器逐圈处理逻辑）；
-- 030 号电池第 50 圈额外加 16 点（528 点，全数据集唯一最长圈），配合
-  处理器按全局最长循环补零，使除该圈外每个循环之后都补有 >= 16 行零值，
-  create_sequence_data 的时序滑窗（TIME_STEPS=8）不会跨循环、跨电池；
-  因此编号最大的电池（030）需保持在训练/测试名单的最后一位
-  （SOC_Train.py / SOH_Train.py 的 _si_test_indices 不含 030）；
-- 该末圈额外点数对 SOH 训练无影响：卷积输入仅多出 <= 16 行补零。
+数据约定（下游 SOC/SOH 训练依赖）
+----------------------------------
+- SOC 取 line 40（放电段）、SOH 取 line 37（充电段）；SOH = 本圈充电容量 /
+  该电池最大充电容量，随老化真实衰减；
+- 只导出 C/2 段 50 圈（前 3 圈化成的容量差异来自倍率而非老化，混入会使
+  SOH 断层）；每条半循环点数在 511/512 间按圈号奇偶微变；
+- 030 号电池末圈额外 +16 点（528 点，全局唯一最长圈）：处理器按最长圈补零后，
+  其余循环之间均有 >= 16 行零值，SOC 时序滑窗（TIME_STEPS=8）不会跨循环；
+  因此 030 需保持在训练/测试名单最后一位（见 SOC_Train.py 名单说明）。
 
-共用要素
+模型规格
 --------
-- 31 只电池与温度梯度（25.0 ~ 40.0 ℃，步长 0.5 ℃）；
-- 几何与电化学参数见 _base_parameter_values（25 μm 电极、6 μm 颗粒、
-  硅 OCP/交换电流密度等）；
-- 多进程并行仿真（环境变量 SI_HALFCELL_WORKERS 可覆盖进程数，
-  SOH_HALFCELL_WORKERS 为兼容旧脚本的备用名），完整生成一次耗时较长
-  （DFN 全耦合约为原 SPMe 的 5~20 倍，建议先用 SI_HALFCELL_DEBUG=1 冒烟验证）。
+- 体系：非晶硅工作电极 / 锂金属对电极；硅 OCP 为 Mark2016 拟合
+  （Chen2020_composite；可用 CUSTOM_OCP_CSV 替换为自备 (x_LiSi, V) 数据表）；
+- 化学计量比 Li_xSi：约 0.02（空硅）~ 3.75（Li15Si4 满嵌）；C_MAX = 278000 mol/m³；
+- 集总热模型把锂金属对电极/负集流器纳入热容计算，_base_parameter_values
+  中补了 5 个物性参数；颗粒径向网格 r_p=30（裂纹模型数值稳定性要求）；
+- 不含 lithium plating（石墨负极主导机制，与半电池语义不符）。
 
-模型级别与冒烟模式（环境变量）
-------------------------------
-- ``SI_HALFCELL_MODEL``：full（默认，DFN+热+力+裂纹）/ no-mechanics（去力学）
-  / no-thermal（去热耦合）/ baseline（仅 SEI，复现原 SPMe 选项），排障降级用；
-- ``SI_HALFCELL_DEBUG=1``：仅仿真前 2 只电池、1 圈化成 + 4 圈 C/2，输出到
-  ``data/_debug_si_halfcell/``，并打印参数自检与耦合变量清单，用于快速验证
-  收敛性，不污染正式数据集。
-
-其他说明
+环境变量
 --------
-- 硅 OCP 采用 PyBaMM 内置 Chen2020_composite 中的 Mark2016 拟合
-  （硅嵌锂/脱锂多项式拟合，出处：Verbrugge et al., J. Electrochem. Soc.
-  163(2) A262, 2015）。若需替换为自备 OCP 数据表（例如 Chevrier & Dahn
-  2009 的数字化数据），将 ``CUSTOM_OCP_CSV`` 指向两列 (x_LiSi, V) 的 CSV 即可。
-- 化学计量比按 Li_xSi 表示：x=0.02 接近空硅，x=3.75 对应 Li15Si4 满嵌锂。
-- 几何沿用交接说明（25 μm 电极厚度、6 μm 颗粒等）；最大锂浓度使用硅体系
-  278000 mol/m3（Chen2020_composite），而非石墨的 298000 mol/m3。
-- EIS 阻抗仿真由独立脚本 ``eis_simulation.py`` 提供（复用本文件的参数集与
-  模型选项，小信号正弦扫频 → Nyquist → 等效电路拟合）。
+- SI_HALFCELL_DEBUG=1：冒烟（2 只电池、1+4 圈），输出 data/_debug_si_halfcell/，
+  并打印参数自检与耦合变量清单；
+- SI_HALFCELL_MODEL：full（默认）/ no-mechanics / no-thermal / baseline 降级；
+- SI_HALFCELL_WORKERS：并行进程数（默认 min(12, CPU-1)）。
+
+用法
+----
+python si_halfcell_dataset.py                                # 完整数据集（约 10~40 分钟）
+$env:SI_HALFCELL_DEBUG='1'; python si_halfcell_dataset.py    # 冒烟验证
+（EIS 阻抗仿真由独立脚本 eis_simulation.py 提供，复用本文件的参数集与模型选项。）
 """
 import os
 import time
